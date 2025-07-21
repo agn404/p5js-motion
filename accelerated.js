@@ -1,59 +1,45 @@
 let y = 50;
 let v = 0;
 let a = 0.5;
+let aDefault = 0.5;
 let paused = false;
-let pauseStart = 0;
-let pauseDuration = 30;
-let resetButton, fpsSlider, pauseButton, fpsLabel;
 let e = 0.8;
 
-// Inputs for a and v
-let inputA, inputV;
-let labelA, labelV;
+let resetButton, fpsSlider, pauseButton, gravityButton, fpsLabel;
+let inputA, inputV, labelA, labelV;
 
 function setup() {
   createCanvas(windowWidth, windowHeight * 0.8);
 
-  // Reset button
+  // UI Elements
   resetButton = createButton('Reset');
-  resetButton.position(10, windowHeight * 0.8 + 10);
   resetButton.mousePressed(reset);
-  
-  // Pause button
+
+  fpsSlider = createSlider(1, 60, 60, 1);
+
   pauseButton = createButton('Pause');
-  pauseButton.position(650, windowHeight * 0.8 + 10);
   pauseButton.mousePressed(togglePause);
 
-  // FPS slider
-  fpsSlider = createSlider(1, 60, 60, 1);
-  fpsSlider.position(100, windowHeight * 0.8 + 10);
-  
-  // FPS label
-  fpsLabel = createSpan('Change FPS');
-  fpsLabel.position(100, windowHeight * 0.8 + 30);
+  gravityButton = createButton('Gravity: On');
+  gravityButton.mousePressed(toggleGravity);
 
-
-  // Acceleration input
   labelA = createSpan('Acceleration:');
-  labelA.position(200, windowHeight * 0.8 + 10);
   inputA = createInput(a.toString(), 'number');
-  inputA.position(300, windowHeight * 0.8 + 10);
   inputA.size(60);
 
-  // Velocity input
   labelV = createSpan('Initial V:');
-  labelV.position(380, windowHeight * 0.8 + 10);
   inputV = createInput(v.toString(), 'number');
-  inputV.position(460, windowHeight * 0.8 + 10);
   inputV.size(60);
+
+  fpsLabel = createSpan('Change FPS');
+
+  layoutUI(); // Position all elements once
 }
 
 function draw() {
   background('#2d2e39');
 
-  // Apply FPS control
-  let fps = fpsSlider.value();
-  frameRate(fps);
+  frameRate(fpsSlider.value());
 
   // Ball
   fill(255, 100, 100);
@@ -68,12 +54,10 @@ function draw() {
   line(width / 2, y + arrowLen, width / 2 - 5, y + arrowLen - 10);
   line(width / 2, y + arrowLen, width / 2 + 5, y + arrowLen - 10);
 
-  // Motion logic
   if (!paused) {
     v += a;
     y += v;
 
-    // Bounce check (only when not paused)
     if (y > height - 20) {
       y = height - 20;
       v = -e * v;
@@ -82,17 +66,6 @@ function draw() {
         v = 0;
         a = 0;
       }
-    }
-  }
-
-  // Bounce
-  if (y > height - 20) {
-    y = height - 20;
-    v = -e * v;
-
-    if (abs(v) < 0.5) {
-      v = 0;
-      a = 0;
     }
   }
 
@@ -108,7 +81,7 @@ function draw() {
     text("Object has come to rest.", 10, 60);
   }
 
-  // Enable/disable inputs based on pause/state
+  // Enable/disable inputs when paused or at rest
   if (paused || (v === 0 && a === 0)) {
     inputA.removeAttribute('disabled');
     inputV.removeAttribute('disabled');
@@ -118,36 +91,51 @@ function draw() {
   }
 }
 
-function reset() {
-  // Apply values from inputs
-  let newA = parseFloat(inputA.value());
-  let newV = parseFloat(inputV.value());
-
-  if (!isNaN(newA)) a = newA;
-  if (!isNaN(newV)) v = newV;
-
-  y = 50;
-  paused = false;
-  
-  pauseButton.html('Pause');
-}
-
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight * 0.8);
+function layoutUI() {
   let uiY = windowHeight * 0.8 + 10;
 
   resetButton.position(10, uiY);
   fpsSlider.position(100, uiY);
-  labelA.position(280, uiY);
-  inputA.position(390, uiY);
-  labelV.position(470, uiY);
-  inputV.position(550, uiY);
-  pauseButton.position(650, uiY);
-  fpsLabel.position(100, uiY+20);
+  fpsLabel.position(120, uiY + 30);
+
+  labelA.position(270, uiY + 5);
+  inputA.position(370, uiY);
+
+  labelV.position(450, uiY + 5);
+  inputV.position(520, uiY);
+
+  gravityButton.position(610, uiY);
+  pauseButton.position(700, uiY);
 }
 
- // pause
+function reset() {
+  let newA = parseFloat(inputA.value());
+  let newV = parseFloat(inputV.value());
+
+  if (!isNaN(newA)) {
+    a = newA;
+    aDefault = newA;
+  }
+  if (!isNaN(newV)) v = newV;
+
+  y = 50;
+  paused = false;
+
+  pauseButton.html('Pause');
+  gravityButton.html(a === 0 ? 'Gravity: Off' : 'Gravity: On');
+}
+
 function togglePause() {
-paused = !paused;
-pauseButton.html(paused ? 'Resume' : 'Pause');
+  paused = !paused;
+  pauseButton.html(paused ? 'Resume' : 'Pause');
+}
+
+function toggleGravity() {
+  if (a === 0) {
+    a = aDefault;
+    gravityButton.html('Gravity: On');
+  } else {
+    a = 0;
+    gravityButton.html('Gravity: Off');
+  }
 }
