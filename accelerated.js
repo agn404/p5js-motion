@@ -1,3 +1,4 @@
+let canvas;
 let y = 50;
 let v = 0;
 let a = 0.5;
@@ -9,19 +10,21 @@ let resetButton, fpsSlider, pauseButton, gravityButton, fpsLabel;
 let inputA, inputV, labelA, labelV;
 
 function setup() {
-  createCanvas(windowWidth, windowHeight * 0.8);
-
+  canvas = createCanvas(windowWidth * 0.9, windowHeight * 0.75);
+  canvas.position(windowWidth * 0.05, 10);
+  canvas.style('border-radius', '8px');
   // UI Elements
   resetButton = createButton('Reset');
   resetButton.mousePressed(reset);
-
-  fpsSlider = createSlider(1, 60, 60, 1);
 
   pauseButton = createButton('Pause');
   pauseButton.mousePressed(togglePause);
 
   gravityButton = createButton('Gravity: On');
   gravityButton.mousePressed(toggleGravity);
+
+  fpsSlider = createSlider(1, 60, 60, 1);
+  fpsLabel = createSpan('Change FPS');
 
   labelA = createSpan('Acceleration:');
   inputA = createInput(a.toString(), 'number');
@@ -31,14 +34,19 @@ function setup() {
   inputV = createInput(v.toString(), 'number');
   inputV.size(60);
 
-  fpsLabel = createSpan('Change FPS');
+  // Style all controls
+  [resetButton, pauseButton, gravityButton, inputA, inputV, fpsSlider].forEach(styleUI);
 
-  layoutUI(); // Position all elements once
+  layoutUI();
+
+  document.body.style.backgroundColor = '#151222';
+  
+  textFont('Lexend');
 }
 
 function draw() {
-  background('#2d2e39');
-
+  
+  background('#21263F');
   frameRate(fpsSlider.value());
 
   // Ball
@@ -46,14 +54,17 @@ function draw() {
   noStroke();
   ellipse(width / 2, y, 40, 40);
 
-  // Velocity arrow
+  // Velocity Arrow
   stroke(255);
   strokeWeight(2);
   let arrowLen = constrain(abs(v) * 5, 0, 80);
-  line(width / 2, y, width / 2, y + arrowLen);
-  line(width / 2, y + arrowLen, width / 2 - 5, y + arrowLen - 10);
-  line(width / 2, y + arrowLen, width / 2 + 5, y + arrowLen - 10);
+  let arrowDir = v >= 0 ? 1 : -1;
 
+  line(width / 2, y, width / 2, y + arrowDir * arrowLen);
+  line(width / 2, y + arrowDir * arrowLen, width / 2 - 5, y + arrowDir * arrowLen - 10 * arrowDir);
+  line(width / 2, y + arrowDir * arrowLen, width / 2 + 5, y + arrowDir * arrowLen - 10 * arrowDir);
+
+  // Motion logic
   if (!paused) {
     v += a;
     y += v;
@@ -61,7 +72,6 @@ function draw() {
     if (y > height - 20) {
       y = height - 20;
       v = -e * v;
-
       if (abs(v) < 0.5) {
         v = 0;
         a = 0;
@@ -72,16 +82,15 @@ function draw() {
   // Display text
   noStroke();
   fill(255);
-  textSize(20);
+  textSize(18);
   textAlign(LEFT, TOP);
   text("Velocity: " + v.toFixed(2) + " px/frame", 10, 10);
   text("Acceleration: " + a.toFixed(2) + " px/frame²", 10, 35);
-
   if (v === 0 && a === 0) {
     text("Object has come to rest.", 10, 60);
   }
 
-  // Enable/disable inputs when paused or at rest
+  // Enable/disable input fields
   if (paused || (v === 0 && a === 0)) {
     inputA.removeAttribute('disabled');
     inputV.removeAttribute('disabled');
@@ -92,20 +101,45 @@ function draw() {
 }
 
 function layoutUI() {
-  let uiY = windowHeight * 0.8 + 10;
+  const y1 = height + 20;
+  const y2 = y1 + 40;
+  const y3 = y2 + 40;
+  const centerX = windowWidth / 2;
 
-  resetButton.position(10, uiY);
-  fpsSlider.position(100, uiY);
-  fpsLabel.position(120, uiY + 30);
+  // First row buttons
+  const buttonSpacing = 100;
+  layoutRow([resetButton, pauseButton, gravityButton], centerX- 25, y1, buttonSpacing);
 
-  labelA.position(270, uiY + 5);
-  inputA.position(370, uiY);
+  // Second row inputs
+  labelA.position(centerX - 180, y2 + 2);
+  inputA.position(centerX - 75, y2);
+  labelV.position(centerX + 25, y2 + 2);
+  inputV.position(centerX + 95, y2);
 
-  labelV.position(450, uiY + 5);
-  inputV.position(520, uiY);
+  // Third row FPS
+  fpsSlider.position(centerX - 90, y3);
+  fpsSlider.style('width', '150px');
+  fpsLabel.position(centerX + 90, y3 + 5);
 
-  gravityButton.position(610, uiY);
-  pauseButton.position(700, uiY);
+  [labelA, labelV, fpsLabel].forEach(label => {
+    label.style('color', 'white');
+    label.style('font-size', '16px');
+    label.style('font-family', 'Lexend, sans-serif');
+  });
+}
+
+function layoutRow(elements, centerX, y, spacing) {
+  const totalWidth = (elements.length - 1) * spacing;
+  let startX = centerX - totalWidth / 2;
+  for (let i = 0; i < elements.length; i++) {
+    elements[i].position(startX + i * spacing, y);
+  }
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth * 0.9, windowHeight * 0.75);
+  canvas.position(windowWidth * 0.05, 10);
+  layoutUI();
 }
 
 function reset() {
@@ -138,4 +172,13 @@ function toggleGravity() {
     a = 0;
     gravityButton.html('Gravity: Off');
   }
+}
+
+function styleUI(el) {
+  el.style('border-radius', '8px');
+  el.style('padding', '5px 10px');
+  el.style('border', 'none');
+  el.style('background', '#272736');
+  el.style('color', 'white');
+  el.style('font-family', 'Lexend, sans-serif');
 }
